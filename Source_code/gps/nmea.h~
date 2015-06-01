@@ -1,0 +1,89 @@
+/**
+ * @file nmea.h
+ *
+ * @author Mikkel Skaarup Jaedicke <mijae12@student.sdu.dk>
+ *
+**/
+
+#ifndef NMEA_H
+#define NMEA_H
+
+#include "gps_helper.h"
+#define RECV_BUFFER_SIZE 512
+#define NMEA_BAUDRATE 9600
+
+#define HEXDIGIT_CHAR(d) ((char)((d) + (((d) < 0xA) ? '0' : 'A'-0xA)))
+
+enum nmea_decode_state_t {
+		NMEA_DECODE_INIT,
+		NMEA_DECODE_GET_CONTENT,
+		NMEA_DECODE_GOT_ASTERIKS,
+		NMEA_DECODE_GOT_FIRST_CHECKSUM_BYTE
+	};
+
+typedef struct {
+	uint8_t satellites;
+/*
+	uint8_t payload; ///< Number of payload bytes
+	int32_t latitude;  ///< Latitude in degrees * 10^7
+	int32_t longitude; ///< Longitude in degrees * 10^7
+	uint32_t msl_altitude;  ///< MSL altitude in meters * 10^2
+	uint32_t ground_speed; ///< velocity in m/s
+	int32_t heading; ///< heading in degrees * 10^2
+	uint8_t satellites; ///< number of sattelites used
+	uint8_t fix_type;  ///< fix type: XXX correct for that
+	uint32_t date;
+	uint32_t utc_time;
+	uint16_t hdop; ///< horizontal dilution of position (without unit)
+	uint8_t ck_a;
+	uint8_t ck_b;
+*/
+} gps_nmea_packet_t;
+
+class NMEA : public GPS_Helper
+{
+public:
+	NMEA(const int &fd, struct vehicle_gps_position_s *gps_position);
+	~NMEA();
+	int				receive(unsigned timeout);
+	int				configure(unsigned &baudrate);
+
+private:
+	/**
+	 * Parse the binary NMEA packet
+	 */
+	int				parse_char(uint8_t b);
+
+	/**
+	 * Handle the package once it has arrived
+	 */
+	int				handle_message(int len);
+
+	/**
+	 * Reset the parse state machine for a fresh start
+	 */
+	void				decode_init(void);
+
+	int					_fd;
+	struct vehicle_gps_position_s *		_gps_position;
+	nmea_decode_state_t   			_decode_state;
+	//uint8_t               			_rx_buffer[RECV_BUFFER_SIZE];
+	unsigned char               			_rx_buffer[RECV_BUFFER_SIZE];
+	uint16_t              			_rx_buffer_bytes;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#endif // NMEA_H
+
